@@ -19,8 +19,8 @@ female_cols = [col for col in df1.columns if "2025년04월_여_" in col and "세
 ages = [col.split('_')[-1].replace('세', '') for col in male_cols]
 
 # 문자열 → 숫자 변환, 남성은 음수로
-male_data = df_pop[male_cols].apply(lambda x: x.replace(',', '')).astype(int).values * -1
-female_data = df_pop[female_cols].apply(lambda x: x.replace(',', '')).astype(int).values
+male_data = df_pop[male_cols].applymap(lambda x: int(str(x).replace(',', ''))).values * -1
+female_data = df_pop[female_cols].applymap(lambda x: int(str(x).replace(',', ''))).values
 
 # 🎯 (1) 인구 피라미드 그래프
 fig1 = go.Figure()
