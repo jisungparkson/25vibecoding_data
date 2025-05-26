@@ -5,3 +5,7 @@ streamlit
 pandas
 plotly
 koreanize-matplotlib
+streamlit
+pandas
+plotly
+openpyxl
