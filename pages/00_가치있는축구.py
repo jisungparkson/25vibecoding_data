@@ -1,54 +1,39 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import os
-import requests # requests 라이브러리 추가
 
-st.set_page_config(page_title="축구 팀 가치 변화", layout="wide")
+# 제목
 st.title("⚽ 유럽 축구 클럽 팀 가치 변화 시각화")
-
-# 1단계에서 확인한 정확한 GitHub Raw URL을 여기에 붙여넣으세요.
-# 예시 (직접 확인 필요):
-github_raw_url = "https://raw.githubusercontent.com/jisungparkson/25vibecoding.data/main/25vibecoding_data/pages/most_valuable_teams.csv"
-
 
 # CSV 파일 불러오기
 try:
-    # URL에서 데이터를 직접 읽어옴
-    # 'requests'를 사용하여 스트림으로 읽는 것이 안정적일 수 있습니다.
-    # response = requests.get(github_raw_url)
-    # response.raise_for_status() # HTTP 오류가 발생하면 예외를 발생시킵니다.
-    # from io import StringIO
-    # df = pd.read_csv(StringIO(response.text), parse_dates=["date"])
+    df = pd.read_csv("pages/most_valuable_teams.csv")
 
-    # 또는 pandas의 read_csv가 URL을 직접 처리할 수 있습니다.
-    df = pd.read_csv(github_raw_url, parse_dates=["date"])
+    # 데이터 확인
+    st.subheader("데이터 미리보기")
+    st.dataframe(df.head())
 
-    st.success("CSV 데이터를 성공적으로 불러왔습니다. (GitHub Raw URL 사용)")
-except requests.exceptions.RequestException as e: # requests 관련 오류 처리
-    st.error(f"GitHub에서 데이터를 불러오는 데 실패했습니다 (네트워크/URL 문제): {e}")
-    st.stop()
-except Exception as e: # 그 외 오류 처리
-    st.error(f"CSV 데이터를 불러오는 데 실패했습니다: {e}")
-    st.stop()
+    # 연도 선택 (슬라이더)
+    year = st.slider("연도를 선택하세요", int(df['year'].min()), int(df['year'].max()), step=1)
 
-# 이후 코드는 동일
-latest_date = df["date"].max()
-top10_teams = df[df["date"] == latest_date].nlargest(10, "value_million_eur")["team"].tolist()
-filtered_df = df[df["team"].isin(top10_teams)]
+    # 해당 연도의 데이터만 필터링
+    filtered_df = df[df['year'] == year]
 
-fig = px.line(
-    filtered_df,
-    x="date",
-    y="value_million_eur",
-    color="team",
-    markers=True,
-    title="최근 1년간 유럽 상위 10개 축구 클럽 팀 가치 변화",
-    labels={
-        "date": "날짜",
-        "value_million_eur": "팀 가치 (백만 유로)",
-        "team": "팀 이름"
-    }
-)
+    # 시각화: 팀 가치 순위 바 차트
+    st.subheader(f"💰 {year}년 팀 가치 순위")
+    fig = px.bar(
+        filtered_df.sort_values(by='value', ascending=False),
+        x='value',
+        y='club',
+        orientation='h',
+        color='club',
+        labels={'value': '팀 가치 (백만 유로)', 'club': '클럽 이름'},
+        height=600
+    )
+    fig.update_layout(yaxis={'categoryorder': 'total ascending'})
+    st.plotly_chart(fig)
 
-st.plotly_chart(fig, use_container_width=True)
+except FileNotFoundError:
+    st.error("❌ CSV 파일을 찾을 수 없습니다. 경로를 확인하세요.")
+except Exception as e:
+    st.error(f"❌ 데이터를 불러오는 데 문제가 발생했습니다: {e}")
