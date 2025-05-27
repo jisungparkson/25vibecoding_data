@@ -6,29 +6,36 @@ st.title("⚽ 유럽 축구 클럽 팀 가치 비교")
 
 try:
     df = pd.read_csv("pages/most_valuable_teams.csv")
+
     st.subheader("📌 데이터 열 이름:")
     st.write(df.columns.tolist())
 
-    # 팀 선택
+    # 사용자 선택
     selected_clubs = st.multiselect(
         "비교할 팀(클럽)을 선택하세요",
         options=sorted(df['Club'].unique()),
         default=["Manchester City", "Real Madrid"]
     )
 
-    # 선택된 팀 필터링
+    selected_column = st.selectbox(
+        "시각화할 항목을 선택하세요",
+        options=['Market_value', 'Market_value_of_players', 'MV_Top_18_players', 'Share_of_MV']
+    )
+
+    # 선택된 팀만 필터링
     filtered_df = df[df['Club'].isin(selected_clubs)]
 
-    # 막대그래프 그리기
+    # 그래프 그리기
     fig = px.bar(
         filtered_df,
         x='Club',
-        y='Market_value',
+        y=selected_column,
         color='Club',
-        text='Market_value',
-        title='선택한 클럽들의 시장 가치 비교',
-        labels={'Market_value': '시장 가치 (백만 유로)'}
+        text=selected_column,
+        title=f"{selected_column} 비교",
+        labels={selected_column: selected_column.replace('_', ' ')}
     )
+
     st.plotly_chart(fig)
 
 except Exception as e:
