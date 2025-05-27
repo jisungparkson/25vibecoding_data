@@ -2,35 +2,40 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# 제목
 st.title("⚽ 유럽 축구 클럽 팀 가치 변화 시각화")
 
-# CSV 파일 불러오기
 try:
+    # CSV 불러오기
     df = pd.read_csv("pages/most_valuable_teams.csv")
 
-    # 데이터 확인
+    # 연도별 데이터를 긴 형식(long format)으로 변환
+    # club, value, 2020, 2021, 2022, 2023 → club, nation, year, value
+    long_df = df.melt(id_vars=['club', 'value'], var_name='year', value_name='market_value')
+
+    # 연도는 숫자형으로 변환
+    long_df['year'] = long_df['year'].astype(int)
+
+    # 데이터 미리보기
     st.subheader("데이터 미리보기")
-    st.dataframe(df.head())
+    st.dataframe(long_df.head())
 
-    # 연도 선택 (슬라이더)
-    year = st.slider("연도를 선택하세요", int(df['year'].min()), int(df['year'].max()), step=1)
+    # 팀 선택
+    selected_clubs = st.multiselect("클럽을 선택하세요", sorted(long_df['club'].unique()), default=["Man City", "Real Madrid"])
 
-    # 해당 연도의 데이터만 필터링
-    filtered_df = df[df['year'] == year]
+    # 선택한 팀만 필터링
+    filtered_df = long_df[long_df['club'].isin(selected_clubs)]
 
-    # 시각화: 팀 가치 순위 바 차트
-    st.subheader(f"💰 {year}년 팀 가치 순위")
-    fig = px.bar(
-        filtered_df.sort_values(by='value', ascending=False),
-        x='value',
-        y='club',
-        orientation='h',
+    # 선 그래프 그리기
+    st.subheader("📈 팀 가치 변화 그래프")
+    fig = px.line(
+        filtered_df,
+        x='year',
+        y='market_value',
         color='club',
-        labels={'value': '팀 가치 (백만 유로)', 'club': '클럽 이름'},
-        height=600
+        markers=True,
+        labels={'year': '연도', 'market_value': '팀 가치 (백만 유로)'},
+        title="연도별 팀 가치 변화"
     )
-    fig.update_layout(yaxis={'categoryorder': 'total ascending'})
     st.plotly_chart(fig)
 
 except FileNotFoundError:
